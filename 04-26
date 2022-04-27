@@ -1,0 +1,450 @@
+/*
+	Sara Wheeler
+	COEN 11L - Tuesday 2:15 PM
+	Lab 5 - Unions (04/26/2022)
+*/
+
+#include <stdio.h> 
+#include <string.h> 
+#define SIZE 10 
+#define LENGTH 20 
+
+typedef union extraInfo
+{
+	char guardianName[LENGTH];
+	int prior;
+	float averageAge;
+}EXTRA_INFO;
+
+typedef union contactInfo
+{
+	char address[LENGTH * 2];
+	int phoneNum;
+}CONTACT_INFO;
+
+typedef struct reservation
+{
+	char names[LENGTH]; //char array name value of 20
+	int size; //int value array of 20
+	int order;
+	int maxAge;
+	EXTRA_INFO extra;
+	CONTACT_INFO contact;
+}RESERVATION;
+
+int counter = 0; //count number of reservations, needs to be accessed by mutliple functions
+char name[LENGTH]; //user inputs name, needs to be accessed by multiple functions
+RESERVATION list[SIZE];
+
+typedef struct statistics
+{
+	char commandName[LENGTH];
+	int timesRan;
+}STATISTICS;
+
+STATISTICS stats[8] = 
+{
+	{"Insert", 0},
+	{"Delete", 0},
+	{"Pop", 0},
+	{"Waitlist", 0},
+	{"Search by Size", 0},
+	{"Search by Text", 0},
+	{"Check Duplicate", 0},
+	{"Print Statistics", 0},
+};
+
+void insert(void);
+void delete(void); //void remove(void);
+void pop(void);
+void waitlist(void);
+void searchSize(void);
+void searchText(void);
+void checkDuplicate(void);
+void printStatistics(void);
+int duplicate(char *);
+
+int main()
+{
+	int userInput;
+	int forever = 1;
+	while (forever == 1)
+	{
+		printf("Welcome to Sara's Surf Lessons!\n1 - Insert\n2 - Delete\n3 - Pop\n4 - Waitlist\n5 - Search by Size\n6 - Search by Text\n7 - Check Duplicate\n8 - Print Statistics\n0 - Quit\nPlease enter an option: ");
+		scanf("%d", &userInput);
+		switch(userInput)
+		{
+			case 1:
+				insert();
+				stats[0].timesRan++;
+				break;
+			case 2:
+				delete();
+				stats[1].timesRan++;
+				break;
+			case 3:
+				pop();
+				stats[2].timesRan++;
+				break;
+			case 4:
+				waitlist();
+				stats[3].timesRan++;
+				break;
+			case 5:
+				searchSize();
+				stats[4].timesRan++;
+				break;
+			case 6:
+				searchText();
+				stats[5].timesRan++;
+				break;
+			case 7:
+				checkDuplicate();
+				stats[6].timesRan++;
+				break;
+			case 8:
+				printStatistics();
+				stats[7].timesRan++;
+				break;
+			case 0:
+				forever = 2;
+				break;
+			default:
+				printf("Bad input.");
+				break;
+		}
+	}
+}
+
+void insert(void) //adds the name and number of people specified to the bottom of the list
+{
+	RESERVATION *p = list;
+	int groupSize;
+	int i, j;
+	int age;
+	int memberAge;
+	double agesSum;
+	float agesAvg;
+	char gName[LENGTH];
+	int priorLessons;
+	int infoChoice;
+	char addressInfo[30];
+	int phoneInfo;
+	if (counter < SIZE)
+	{
+		printf("Please enter your name: ");
+		scanf("%s", name);
+		duplicate(name);
+		strcpy(list[counter].names, name);
+		printf("Please enter your group size: ");
+		scanf("%d", &groupSize);
+		list[counter].size = groupSize;
+		list[counter].order = counter + 1;
+		printf("Enter the age of the oldest member: ");
+		//scanf("%d", &age);
+		//strcpy(p->names, name); 
+		//strcpy(list[counter].names, name); //copy name string to array
+		//p->size = groupSize; 
+		//list[counter].size = groupSize; //copy groupSize integer to array
+		//p->order = counter + 1;
+		//list[counter].order = counter + 1;
+		//p->maxAge = age;
+		
+		//extra info
+		if (scanf("%d", &age))
+		{
+			printf("Valid entry.\n");
+			if (age < 18)
+			{
+				printf("Please enter your guardian's name: ");
+				scanf("%s", gName);
+				strcpy(list[counter].extra.guardianName, gName);
+				printf("%s\n", list[counter].extra.guardianName);
+			}
+			else if (age > 65)
+			{
+				printf("Please enter how many surf lessons you have had: ");
+				scanf("%d", &priorLessons);
+				list[counter].extra.prior = priorLessons;
+				printf("%d\n", list[counter].extra.prior);
+			}
+			else
+			{
+				for (i = 0; i < groupSize; i++)
+				{
+					printf("There are %d members in your group. Enter age for Member %d: ", groupSize, i + 1);
+					scanf("%d", &memberAge);
+					agesSum += memberAge;
+					agesAvg = (agesSum / (double)groupSize);
+				}
+				list[counter].extra.averageAge = agesAvg;
+				printf("%f\n", list[counter].extra.averageAge);
+			}
+			list[counter].maxAge = age;
+			//contact info
+			printf("Please enter 1 for address or 2 for phone number: ");
+			scanf("%d", &infoChoice);
+			if (infoChoice == 1)
+			{
+				printf("Please enter your address: ");
+				scanf("%s", addressInfo);
+				strcpy(list[counter].contact.address, addressInfo);
+				printf("%s\n", list[counter].contact.address); //can't have a space
+			}
+			else if (infoChoice == 2)
+			{
+				printf("Please enter your 10-digit phone number: ");
+				scanf("%d", &phoneInfo);
+				list[counter].contact.phoneNum = phoneInfo;
+				printf("%d\n", list[counter].contact.phoneNum); //doesnt work as an int
+			}	
+			else
+			{
+				printf("Bad input.\n");
+				return;
+			}
+		}
+		else
+		{
+			printf("Bad input. No information will be stored.\n");
+			return;
+		}
+		printf("\n");
+		counter++; //increase number of slots
+		return;
+	}
+	else
+	{
+		printf("The waitlist is full.\n\n");
+	}
+	return;
+}
+
+void delete(void) //removes (shows and deletes) oldest entry that fits the size of the opening; moves the entire list upwards
+{
+	RESERVATION *p = list;
+	int openingSize;
+	int taught = 0;
+	int i, j;
+	if (counter == 0) //no groups on waitlist
+	{
+		printf("There is currently no waitlist.\n\n");
+	}
+	else
+	{
+		printf("Enter opening size: ");
+		scanf("%d", &openingSize);
+		for (i = 0; i < counter; i++, p++) //search through all groups on waitlist
+		{
+			if (p->size <= openingSize)
+			{
+				printf("%s's group of %d has had their surf lesson.\n\n", p->names,p->size);
+				openingSize -= (p->size); //allows for a new opening size
+				for (j = i; j < counter; j++)
+				{
+					strcpy(list[j].names, list[j + 1].names); //shifts name up one
+					list[j].size = list[j + 1].size; //shifts group size up one
+				}
+				i--; //list shifted
+				counter--; //decrease number of slots
+				taught++; //surf lesson occurred
+				break;
+			}
+		}
+	}
+	if (taught == 0)
+	{
+		printf("Group size does not fit any lesson openings.\n\n"); //opening is too small for any group in waitlist
+	}
+	return;
+}
+
+void pop(void) //removes (shows and deletes) newest entry
+{
+	RESERVATION *p = list;
+	int i, j;
+	if (counter == 0) //no groups on waitlist
+	{
+		printf("There is currently no waitlist.\n\n");
+	}
+	else
+	{
+		printf("Newest entry to be deleted: %s\n\n", name); //show last entry
+		for (i = 0; i < SIZE; i++, p++)
+		{
+			if (strcmp(name, p->names) == 0) //move other lessons up
+			{
+				strcpy(list[counter - 1].names, list[counter].names); //same idea as names[counter - 1][0] = '\0';
+				list[counter - 1].size = list[counter].size;
+				counter--;
+			}
+		}
+	}
+	return;
+}
+
+void waitlist(void) //shows the list, name and number, from oldest to newest
+{
+	RESERVATION *p = list;
+	int i, j;
+	if (counter == 0) //no groups on waitlist
+	{
+		printf("There is currently no waitlist.\n\n");
+	}
+	for (i = 0; i < counter; i++, p++)
+	{
+		if (p->extra.guardianName[0] != '\0')
+		{
+			printf("%s, %d, %d, %d, %s, ", p->names, p->size, p->order, p->maxAge, p->extra.guardianName);
+			if (p->contact.address[0] != '\0')
+			{
+				printf("%s\n", p->contact.address);
+			}
+			else
+			{
+				printf("%d\n", p->contact.phoneNum);
+			}
+		}
+		else if (p->extra.prior > 0) 
+		{
+			printf("%s, %d, %d, %d, %d, ", p->names, p->size, p->order, p->maxAge, p->extra.prior); //prior won't print
+			if (p->contact.address[0] != '\0')
+			{
+				printf("%s\n", p->contact.address);
+			}
+			else
+			{
+				printf("%d\n", p->contact.phoneNum);
+			}
+		}
+		else
+		{
+			printf("%s, %d, %d, %d, %f, ", p->names, p->size, p->order, p->maxAge, p->extra.averageAge); //average age won't print
+			if (p->contact.address[0] != '\0')
+			{
+				printf("%s\n", p->contact.address);
+			}
+			else
+			{
+				printf("%d\n", p->contact.phoneNum);
+			}
+		}
+	}
+	return;
+}
+
+void searchSize(void) //show the entries in the list that have a size less than or equal to the entered size
+{
+	int checkSize;
+	int check = 0;
+	int i, j;
+	printf("\nEnter a group size: ");
+	scanf("%d", &checkSize);
+	RESERVATION *p = list;
+	if (checkSize > 0)
+	{
+		for (i = 0; i < counter; i++, p++) //iterate over elements
+		{
+			if (p->size <= checkSize) //shows every element with size less than or equal to input
+			{
+				check = 1;
+				printf("%s has a lesson with %d people. \n", p->names,p->size);
+			}
+		}
+		if (check == 0)
+		{
+			printf("No groups found. \n");
+		}
+	}
+	return;
+}
+
+void searchText(void) //Show the entries in the list that starts with the text
+{
+	RESERVATION *p = list;
+	int found = 0;
+	int present = 0;
+	char letter[LENGTH];
+	int i, j;
+	printf("Please enter text: ");
+	scanf("%s", letter); //allows for multiple letter inputs
+	for (i = 0; i < counter; i++, p++) //iterate over elements
+	{
+		if(letter[0] == p->names[0]) //beginning letter must match input
+		{
+			found = 1;
+			for (j = 1; letter[j] != '\0'; j++)
+			{
+				if (letter[j] != p->names[j])
+				{
+					found = 0;
+					break;
+				}
+			}
+			if (found == 1)
+			{
+				printf("%s has a lesson with %d people. \n", p->names, p->size);
+				present = 1;
+			}
+		}		
+	}
+	if (present == 0)
+	{
+		printf("No names found. \n");
+	}
+	return;
+}
+
+void checkDuplicate(void)
+{
+	RESERVATION *p = list;
+	int check = 0;
+	int i, j;
+	for (i = 0; i < counter; i++, p++)
+	{
+		for (j = 0; j < counter; j++, p++)
+		{
+			if ((strcmp(name, p->names) == 0) && (i!=j)) //indexes cannot be the same
+			{
+				check = 1;
+				printf("There are duplicates of %s\n", p->names);
+			}
+		}
+	}
+	if (check == 0)
+	{
+		printf("There are no duplicates.\n");
+	}
+}
+
+void printStatistics(void)
+{
+	STATISTICS *p2 = stats;
+	int i, j;
+	printf("Functions ran:\n");
+	for (i = 0; i < 8; i++, p2++)
+	{
+		printf("%s: %d\n", p2->commandName, p2->timesRan);
+	}
+}
+
+int duplicate(char *name)
+{
+	RESERVATION *p = list;
+	int i, j;
+	for(i = 0; i < SIZE; i++, p++) //iterate over elements
+	{
+		if (strcmp(p->names, name) == 0) //same name
+		{
+			printf("There is already an appointment under that name!\n");
+			printf("Please enter another name: ");
+			scanf("%s", name);
+			return 1;
+		}
+		else
+		{
+			printf("There are no duplicates.\n");
+			return 0;
+		}
+	}
+}
